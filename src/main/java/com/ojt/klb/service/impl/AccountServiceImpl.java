@@ -8,7 +8,6 @@ import com.ojt.klb.repository.AccountRepository;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,17 +22,20 @@ public class AccountServiceImpl implements AccountService {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
-    @Autowired
-    private KafkaTemplate<String, ChangeStatusDto> kafkaTemplate;
+    private final KafkaTemplate<String, ChangeStatusDto> kafkaTemplate;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     private static final String TOPIC = "account-status-topics";
     private static final String CUSTOMER_SERVICE_URL = "http://localhost:8082/api/v1/customer/";
+
+    public AccountServiceImpl(AccountRepository accountRepository, KafkaTemplate<String, ChangeStatusDto> kafkaTemplate, RestTemplate restTemplate) {
+        this.accountRepository = accountRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.restTemplate = restTemplate;
+    }
 
 
     @Override
@@ -53,11 +55,9 @@ public class AccountServiceImpl implements AccountService {
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
 
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                // Parse the response to extract only the required fields
                 String responseBody = responseEntity.getBody();
                 AccountDto customerData = parseCustomerData(responseBody);
 
-                // Add the account-specific information
                 customerData.setAccountName(account.getAccountName());
                 customerData.setAccountNumber(account.getAccountNumber());
                 customerData.setBalance(account.getBalance());
@@ -109,7 +109,7 @@ public class AccountServiceImpl implements AccountService {
             FindNameByAccountDto findNameByAccountDto = parseCustomerGetName(responseBody);
             return findNameByAccountDto.getFullName();
         } else {
-            logger.error("Failed to fetch customer data from external service for account id: {}", accountId);
+            logger.error("Failed to fetch customer data from external service for accountId: {}", accountId);
             return null;
         }
     }

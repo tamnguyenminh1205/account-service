@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class LoginDto {
+
     @Size(min = 6, max = 20, message = "{username.size}")
     @NotNull(message = "{username.notBlank}")
     private String username;

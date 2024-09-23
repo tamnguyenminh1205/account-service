@@ -1,5 +1,6 @@
 package com.ojt.klb.config;
 
+import com.ojt.klb.dto.CardRegistrationRequestUpdateDto;
 import com.ojt.klb.dto.ChangeStatusDto;
 import com.ojt.klb.dto.CustomerDto;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -51,6 +52,16 @@ public class KafkaProducerConfig {
     @Bean
     public KafkaTemplate<String, ChangeStatusDto> kafkaTemplateChangeStatusDto() {
         return new KafkaTemplate<>(producerFactoryChangeStatusDto());
+    }
+
+    @Bean
+    public ProducerFactory<String, CardRegistrationRequestUpdateDto> producerFactoryCardRegistrationRequestUpdateDto() {
+        return new DefaultKafkaProducerFactory<>(producerConfigs());
+    }
+
+    @Bean
+    public KafkaTemplate<String, CardRegistrationRequestUpdateDto> kafkaTemplateCardRegistrationRequestUpdateDto() {
+        return new KafkaTemplate<>(producerFactoryCardRegistrationRequestUpdateDto());
     }
 }
 

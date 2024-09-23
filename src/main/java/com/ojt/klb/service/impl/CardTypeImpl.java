@@ -7,7 +7,6 @@ import com.ojt.klb.repository.CardTypeRepository;
 import com.ojt.klb.service.CardTypeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +19,14 @@ public class CardTypeImpl implements CardTypeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CardTypeImpl.class);
 
-    @Autowired
-    private CardTypeRepository cardTypeRepository;
+    private final CardTypeRepository cardTypeRepository;
 
-    @Autowired
-    private CardTypeMapper cardTypeMapper;
+    private final CardTypeMapper cardTypeMapper;
+
+    public CardTypeImpl(CardTypeRepository cardTypeRepository, CardTypeMapper cardTypeMapper) {
+        this.cardTypeRepository = cardTypeRepository;
+        this.cardTypeMapper = cardTypeMapper;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -44,7 +46,7 @@ public class CardTypeImpl implements CardTypeService {
 
     @Override
     public List<CardTypeDto> getAllCardTypesIsActive() {
-        logger.info("Fetching all active CardTypes");
+        logger.info("Fetching all active CardTypes isActive");
         List<CardType> cardTypes = cardTypeRepository.findByIsActiveTrue();
         return cardTypes.stream()
                 .map(cardTypeMapper::toCardTypeDto)

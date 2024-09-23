@@ -7,14 +7,11 @@ import com.ojt.klb.exception.PhoneNumberAlreadyExistsException;
 import com.ojt.klb.exception.UserNotFoundException;
 import com.ojt.klb.service.UserService;
 import com.ojt.klb.response.ApiResponse;
-import com.ojt.klb.service.UserService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,8 +24,12 @@ public class UserController {
 
     private final static Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginDto>> login(@RequestParam String username, @RequestParam String password) {

@@ -10,10 +10,9 @@ import com.ojt.klb.model.User;
 import com.ojt.klb.repository.AccountRepository;
 import com.ojt.klb.repository.UserRepository;
 import com.ojt.klb.service.UserService;
-import com.ojt.klb.utils.GenerateUniqueAccountNumber;
+import com.ojt.klb.utils.GenerateUniqueNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,22 +28,26 @@ public class UserServiceImpl implements UserService {
 
     private final static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
-    @Autowired
-    private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private GenerateUniqueAccountNumber generateUniqueAccountNumber;
+    private final AccountRepository accountRepository;
 
-    @Autowired
-    private KafkaTemplate<String, CustomerDto> kafkaTemplate;
+    private final GenerateUniqueNumber generateUniqueAccountNumber;
+
+    private final KafkaTemplate<String, CustomerDto> kafkaTemplate;
 
     private static final String TOPIC = "customer-topic";
+
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, AccountRepository accountRepository, GenerateUniqueNumber generateUniqueAccountNumber, KafkaTemplate<String, CustomerDto> kafkaTemplate) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.accountRepository = accountRepository;
+        this.generateUniqueAccountNumber = generateUniqueAccountNumber;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     @Override
     public Optional<LoginDto> login(String username, String password) {

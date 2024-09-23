@@ -3,12 +3,10 @@ package com.ojt.klb.controller;
 import com.ojt.klb.dto.AccountDto;
 import com.ojt.klb.dto.ChangeStatusDto;
 import com.ojt.klb.dto.FindNameByAccountDto;
-import com.ojt.klb.repository.AccountRepository;
 import com.ojt.klb.response.ApiResponse;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,13 +19,16 @@ public class AccountController {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
 
-    @Autowired
-    private AccountService accountService;
 
+    private final AccountService accountService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<AccountDto>> getAccountById(@PathVariable Long id) {
-        Optional<AccountDto> accountDtoOptional = accountService.getAccountById(id);
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
+    @GetMapping("/{accountId}")
+    public ResponseEntity<ApiResponse<AccountDto>> getAccountById(@PathVariable Long accountId) {
+        Optional<AccountDto> accountDtoOptional = accountService.getAccountById(accountId);
 
         if (accountDtoOptional.isPresent()) {
             ApiResponse<AccountDto> response = new ApiResponse<>(HttpStatus.OK.value(), "Account data fetched successfully", true, accountDtoOptional.get()
@@ -39,12 +40,12 @@ public class AccountController {
         }
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping("/{accountId}/status")
     public ResponseEntity<ApiResponse<String>> changeStatusAccount(
-            @PathVariable("id") Long id,
+            @PathVariable("accountId") Long accountId,
             @RequestBody ChangeStatusDto changeStatusDto) {
         try {
-            accountService.changeStatusAccount(id, changeStatusDto);
+            accountService.changeStatusAccount(accountId, changeStatusDto);
             ApiResponse<String> response = new ApiResponse<>(HttpStatus.OK.value(), "Account status updated successfully", true, null);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {

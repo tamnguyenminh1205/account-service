@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class FindNameByAccountDto {
+
     private String fullName;
 }

@@ -47,7 +47,7 @@ public class Account {
 
     public enum Status {
         active,
-        inactive,
-        suspended
+        suspended,
+        closed
     }
 }
