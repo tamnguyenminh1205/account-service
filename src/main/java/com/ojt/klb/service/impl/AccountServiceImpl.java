@@ -62,6 +62,7 @@ public class AccountServiceImpl implements AccountService {
                 customerData.setAccountNumber(account.getAccountNumber());
                 customerData.setBalance(account.getBalance());
                 customerData.setStatus(account.getStatus());
+                customerData.setOpeningDate(account.getCreatedAt());
 
                 return Optional.of(customerData);
             } else {
@@ -107,6 +108,7 @@ public class AccountServiceImpl implements AccountService {
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
             String responseBody = responseEntity.getBody();
             FindNameByAccountDto findNameByAccountDto = parseCustomerGetName(responseBody);
+            assert findNameByAccountDto != null;
             return findNameByAccountDto.getFullName();
         } else {
             logger.error("Failed to fetch customer data from external service for accountId: {}", accountId);
