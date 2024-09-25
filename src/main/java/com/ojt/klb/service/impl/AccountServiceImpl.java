@@ -1,40 +1,34 @@
 package com.ojt.klb.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ojt.klb.client.AccountClient;
 import com.ojt.klb.dto.*;
 import com.ojt.klb.model.Account;
 import com.ojt.klb.repository.AccountRepository;
+import com.ojt.klb.response.ApiResponse;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
 public class AccountServiceImpl implements AccountService {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
+    private static final String TOPIC = "account-status-topics";
 
+    private final AccountClient accountClient;
     private final AccountRepository accountRepository;
-
     private final KafkaTemplate<String, ChangeStatusDto> kafkaTemplate;
 
-    private final RestTemplate restTemplate;
 
-    private static final String TOPIC = "account-status-topics";
-    private static final String CUSTOMER_SERVICE_URL = "http://localhost:8082/api/v1/customer/";
-
-    public AccountServiceImpl(AccountRepository accountRepository, KafkaTemplate<String, ChangeStatusDto> kafkaTemplate, RestTemplate restTemplate) {
+    public AccountServiceImpl(AccountClient accountClient, AccountRepository accountRepository, KafkaTemplate<String, ChangeStatusDto> kafkaTemplate) {
+        this.accountClient = accountClient;
         this.accountRepository = accountRepository;
         this.kafkaTemplate = kafkaTemplate;
-        this.restTemplate = restTemplate;
     }
 
 
@@ -50,24 +44,29 @@ public class AccountServiceImpl implements AccountService {
                 return Optional.empty();
             }
 
+            ResponseEntity<ApiResponse<AccountDto>> responseEntity = accountClient.getData(account.getId());
+            if (responseEntity.getBody() != null && responseEntity.getBody().isSuccess()) {
+                AccountDto customerData = responseEntity.getBody().getData();
 
-            String url = CUSTOMER_SERVICE_URL + account.getId();
-            ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
+                if (customerData != null) {
+                    customerData.setFullName(customerData.getFullName());
+                    customerData.setAccountName(account.getAccountName());
+                    customerData.setAccountNumber(account.getAccountNumber());
+                    customerData.setDateOfBirth(customerData.getDateOfBirth());
+                    customerData.setGender(customerData.getGender());
+                    customerData.setEmail(customerData.getEmail());
+                    customerData.setPhoneNumber(customerData.getPhoneNumber());
+                    customerData.setPermanentAddress(customerData.getPermanentAddress());
+                    customerData.setCurrentAddress(customerData.getCurrentAddress());
+                    customerData.setBalance(account.getBalance());
+                    customerData.setStatus(account.getStatus());
+                    customerData.setOpeningDate(account.getCreatedAt());
 
-            if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                String responseBody = responseEntity.getBody();
-                AccountDto customerData = parseCustomerData(responseBody);
-
-                customerData.setAccountName(account.getAccountName());
-                customerData.setAccountNumber(account.getAccountNumber());
-                customerData.setBalance(account.getBalance());
-                customerData.setStatus(account.getStatus());
-                customerData.setOpeningDate(account.getCreatedAt());
-
-                return Optional.of(customerData);
-            } else {
-                logger.error("Failed to fetch customer data from external service for account id: {}", account.getId());
-                return Optional.empty();
+                    return Optional.of(customerData);
+                } else {
+                    logger.error("Failed to fetch customer data from external service for account id: {}", account.getId());
+                    return Optional.empty();
+                }
             }
         }
         logger.warn("Account not found for id: {}", id);
@@ -87,7 +86,6 @@ public class AccountServiceImpl implements AccountService {
         logger.info("Sent customer information to Kafka topic: {}", TOPIC);
     }
 
-
     @Override
     public Optional<Long> getAccountIdByAccountNumber(Long accountNumber) {
         Optional<Account> accountOptional = accountRepository.findAccountByAccountNumber(accountNumber);
@@ -102,55 +100,12 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public String getFullNameByAccountId(Long accountId) {
 
-        String url = CUSTOMER_SERVICE_URL + accountId;
-        ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
-
-        if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            String responseBody = responseEntity.getBody();
-            FindNameByAccountDto findNameByAccountDto = parseCustomerGetName(responseBody);
-            assert findNameByAccountDto != null;
-            return findNameByAccountDto.getFullName();
+        ResponseEntity<ApiResponse<AccountDto>> responseEntity = accountClient.getData(accountId);
+        if (responseEntity.getBody() != null && responseEntity.getBody().isSuccess()) {
+            AccountDto customerData = responseEntity.getBody().getData();
+            return customerData.getFullName();
         } else {
-            logger.error("Failed to fetch customer data from external service for accountId: {}", accountId);
-            return null;
-        }
-    }
-
-
-    private AccountDto parseCustomerData(String responseBody) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            JsonNode dataNode = rootNode.path("data");
-
-            AccountDto accountDto = new AccountDto();
-            accountDto.setFullName(dataNode.path("fullName").asText());
-            accountDto.setDateOfBirth(LocalDate.parse(dataNode.path("dateOfBirth").asText()));
-            accountDto.setGender(dataNode.path("gender").asText());
-            accountDto.setEmail(dataNode.path("email").asText());
-            accountDto.setPhoneNumber(dataNode.path("phoneNumber").asText());
-            accountDto.setPermanentAddress(dataNode.path("permanentAddress").asText());
-            accountDto.setCurrentAddress(dataNode.path("currentAddress").asText());
-
-            return accountDto;
-        } catch (Exception e) {
-            logger.error("Error parsing customer data: ", e);
-            return new AccountDto();
-        }
-    }
-
-    private FindNameByAccountDto parseCustomerGetName(String responseBody) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            JsonNode dataNode = rootNode.path("data");
-
-            FindNameByAccountDto findNameByAccountDto = new FindNameByAccountDto();
-            findNameByAccountDto.setFullName(dataNode.path("fullName").asText());
-
-            return findNameByAccountDto;
-        }catch (Exception e) {
-            logger.error("Error parsing customer data: ", e);
+            logger.error("Failed fetch customer data from external service for account id: {}", accountId);
             return null;
         }
     }
