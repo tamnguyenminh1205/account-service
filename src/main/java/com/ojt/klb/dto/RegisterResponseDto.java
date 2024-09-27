@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class RegisterResponseDto {
-    private Long userId;
+    private Long id;
     private String username;
     private String role;
 }

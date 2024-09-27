@@ -109,7 +109,7 @@ public class UserServiceImpl implements UserService {
 
 
         RegisterResponseDto response = new RegisterResponseDto();
-        response.setUserId(newUser.getId());
+        response.setId(newUser.getId());
         response.setUsername(newUser.getUsername());
         response.setRole(newUser.getRole().name());
         return response;
