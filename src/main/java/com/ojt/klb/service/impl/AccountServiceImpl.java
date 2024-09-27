@@ -3,7 +3,9 @@ package com.ojt.klb.service.impl;
 import com.ojt.klb.client.AccountClient;
 import com.ojt.klb.dto.*;
 import com.ojt.klb.model.Account;
+import com.ojt.klb.model.SavingsAccount;
 import com.ojt.klb.repository.AccountRepository;
+import com.ojt.klb.repository.SavingsAccountRepository;
 import com.ojt.klb.response.ApiResponse;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
@@ -22,12 +24,14 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountClient accountClient;
     private final AccountRepository accountRepository;
+    private final SavingsAccountRepository savingsAccountRepository;
     private final KafkaTemplate<String, ChangeStatusDto> kafkaTemplate;
 
 
-    public AccountServiceImpl(AccountClient accountClient, AccountRepository accountRepository, KafkaTemplate<String, ChangeStatusDto> kafkaTemplate) {
+    public AccountServiceImpl(AccountClient accountClient, AccountRepository accountRepository, SavingsAccountRepository savingsAccountRepository, KafkaTemplate<String, ChangeStatusDto> kafkaTemplate) {
         this.accountClient = accountClient;
         this.accountRepository = accountRepository;
+        this.savingsAccountRepository = savingsAccountRepository;
         this.kafkaTemplate = kafkaTemplate;
     }
 
@@ -116,9 +120,15 @@ public class AccountServiceImpl implements AccountService {
             ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAccountIdAndCustomerId = accountClient.getAccountIdAndCustomerId(account.get().getId());
             if (getAccountIdAndCustomerId.getBody() != null && getAccountIdAndCustomerId.getBody().isSuccess()) {
                 GetAccountIdCustomerIdUserId data  = getAccountIdAndCustomerId.getBody().getData();
+                Optional<SavingsAccount> savingsAccount = savingsAccountRepository.findByUserId(userId);
                 data.setAccountId(account.get().getId());
                 data.setCustomerId(data.getCustomerId());
                 data.setUserId(account.get().getUser().getId());
+                if (savingsAccount.isPresent()) {
+                    data.setSavingAccountId(savingsAccount.get().getId());
+                } else {
+                    data.setSavingAccountId(null);
+                }
                 return Optional.of(data);
             } else {
                 logger.error("Failed to fetch data from external service for account id: {}", userId);

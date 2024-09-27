@@ -7,4 +7,5 @@ public class GetAccountIdCustomerIdUserId {
     private Long userId;
     private Long accountId;
     private Long customerId;
+    private Long savingAccountId;
 }
