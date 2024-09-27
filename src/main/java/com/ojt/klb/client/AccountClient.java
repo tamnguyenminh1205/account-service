@@ -1,6 +1,7 @@
 package com.ojt.klb.client;
 
 import com.ojt.klb.dto.AccountDto;
+import com.ojt.klb.dto.GetAccountIdCustomerIdUserId;
 import com.ojt.klb.response.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -11,4 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface AccountClient {
     @GetMapping("/api/v1/customer/{accountId}")
     ResponseEntity<ApiResponse<AccountDto>> getData(@PathVariable("accountId") Long accountId);
+
+    @GetMapping("/api/v1/customer/{accountId}/customer-info-for-account-service")
+    ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAccountIdAndCustomerId(@PathVariable("accountId") Long accountId);
 }

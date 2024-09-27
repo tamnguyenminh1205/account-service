@@ -3,6 +3,7 @@ package com.ojt.klb.controller;
 import com.ojt.klb.dto.AccountDto;
 import com.ojt.klb.dto.ChangeStatusDto;
 import com.ojt.klb.dto.FindNameByAccountDto;
+import com.ojt.klb.dto.GetAccountIdCustomerIdUserId;
 import com.ojt.klb.response.ApiResponse;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
@@ -74,6 +75,28 @@ public class AccountController {
         } else {
             ApiResponse<FindNameByAccountDto> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Account not found", false, null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @GetMapping("/{userId}/all-id-for-gateway")
+    public ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAllIdForApiGateWay(@PathVariable Long userId) {
+        Optional<GetAccountIdCustomerIdUserId> data = accountService.getAccountIdCustomerIdUserId(userId);
+        if (data.isPresent()) {
+            ApiResponse<GetAccountIdCustomerIdUserId> response = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "All ID data fetched successfully",
+                    true,
+                    data.get()
+            );
+            return ResponseEntity.ok(response);
+        } else {
+            ApiResponse<GetAccountIdCustomerIdUserId> response = new ApiResponse<>(
+                    HttpStatus.NOT_FOUND.value(),
+                    "All id not found",
+                    false,
+                    null
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 }

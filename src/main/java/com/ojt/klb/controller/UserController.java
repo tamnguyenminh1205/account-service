@@ -3,6 +3,7 @@ package com.ojt.klb.controller;
 import com.ojt.klb.dto.ForgetPasswordDto;
 import com.ojt.klb.dto.LoginDto;
 import com.ojt.klb.dto.RegisterDto;
+import com.ojt.klb.dto.RegisterResponseDto;
 import com.ojt.klb.exception.PhoneNumberAlreadyExistsException;
 import com.ojt.klb.exception.UserNotFoundException;
 import com.ojt.klb.service.UserService;
@@ -56,19 +57,20 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> createUser(@Valid @RequestBody RegisterDto registerDto) {
+    public ResponseEntity<ApiResponse<RegisterResponseDto>> createUser(@Valid @RequestBody RegisterDto registerDto) {
         logger.info("Create user request received for username: {}", registerDto.getPhoneNumber());
         try {
-            userService.createUser(registerDto);
-            ApiResponse<String> response = new ApiResponse<>(
+            RegisterResponseDto userResponse = userService.createUser(registerDto);
+
+            ApiResponse<RegisterResponseDto> response = new ApiResponse<>(
                     HttpStatus.CREATED.value(),
                     "User created successfully",
                     true,
-                    null
+                    userResponse
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (PhoneNumberAlreadyExistsException e) {
-            ApiResponse<String> response = new ApiResponse<>(
+            ApiResponse<RegisterResponseDto> response = new ApiResponse<>(
                     HttpStatus.BAD_REQUEST.value(),
                     "Phone number already exists",
                     false,
@@ -77,7 +79,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
             logger.error("Error creating user: {}", e.getMessage());
-            ApiResponse<String> response = new ApiResponse<>(
+            ApiResponse<RegisterResponseDto> response = new ApiResponse<>(
                     HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     "Error creating user",
                     false,
@@ -87,15 +89,16 @@ public class UserController {
         }
     }
 
-    @PostMapping("/forgetPassword/{id}")
+
+    @PostMapping("/forgetPassword/{userId}")
     public ResponseEntity<ApiResponse<String>> forgetPassword(
-            @PathVariable Long id,
+            @PathVariable Long userId,
             @Valid @RequestBody ForgetPasswordDto forgetPasswordDto) {
 
-        logger.info("Forget password request received for user ID: {}", id);
+        logger.info("Forget password request received for user ID: {}", userId);
 
         try {
-            userService.forgetPassword(id, forgetPasswordDto.getNewPassword());
+            userService.forgetPassword(userId, forgetPasswordDto.getNewPassword());
 
             ApiResponse<String> response = new ApiResponse<>(
                     HttpStatus.OK.value(),
@@ -106,7 +109,7 @@ public class UserController {
             return ResponseEntity.ok(response);
 
         } catch (UserNotFoundException e) {
-            logger.warn("User not found with ID: {}", id);
+            logger.warn("User not found with ID: {}", userId);
             ApiResponse<String> response = new ApiResponse<>(
                     HttpStatus.NOT_FOUND.value(),
                     "User not found",
@@ -116,7 +119,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 
         } catch (Exception e) {
-            logger.error("Error updating password for user ID: {}", id, e);
+            logger.error("Error updating password for user ID: {}", userId, e);
             ApiResponse<String> response = new ApiResponse<>(
                     HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     "An error occurred while updating the password",

@@ -6,4 +6,6 @@ import lombok.Data;
 public class FindNameByAccountDto {
 
     private String fullName;
+
+
 }

@@ -31,7 +31,6 @@ public class AccountServiceImpl implements AccountService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-
     @Override
     public Optional<AccountDto> getAccountById(Long id) {
         Optional<Account> accountOptional = accountRepository.findById(id);
@@ -108,5 +107,23 @@ public class AccountServiceImpl implements AccountService {
             logger.error("Failed fetch customer data from external service for account id: {}", accountId);
             return null;
         }
+    }
+
+    @Override
+    public Optional<GetAccountIdCustomerIdUserId> getAccountIdCustomerIdUserId(Long userId) {
+        Optional<Account> account = accountRepository.findByUserId(userId);
+        if (account.isPresent()) {
+            ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAccountIdAndCustomerId = accountClient.getAccountIdAndCustomerId(account.get().getId());
+            if (getAccountIdAndCustomerId.getBody() != null && getAccountIdAndCustomerId.getBody().isSuccess()) {
+                GetAccountIdCustomerIdUserId data  = getAccountIdAndCustomerId.getBody().getData();
+                data.setAccountId(account.get().getId());
+                data.setCustomerId(data.getCustomerId());
+                data.setUserId(account.get().getUser().getId());
+                return Optional.of(data);
+            } else {
+                logger.error("Failed to fetch data from external service for account id: {}", userId);
+            }
+        }
+        return Optional.empty();
     }
 }

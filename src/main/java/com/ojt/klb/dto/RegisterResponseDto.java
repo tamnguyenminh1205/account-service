@@ -3,11 +3,8 @@ package com.ojt.klb.dto;
 import lombok.Data;
 
 @Data
-public class LoginDto {
-
-    private Long id;
-
+public class RegisterResponseDto {
+    private Long userId;
     private String username;
-
     private String role;
 }

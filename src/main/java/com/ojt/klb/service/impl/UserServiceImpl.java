@@ -3,6 +3,7 @@ package com.ojt.klb.service.impl;
 import com.ojt.klb.dto.CustomerDto;
 import com.ojt.klb.dto.LoginDto;
 import com.ojt.klb.dto.RegisterDto;
+import com.ojt.klb.dto.RegisterResponseDto;
 import com.ojt.klb.exception.PhoneNumberAlreadyExistsException;
 import com.ojt.klb.exception.UserNotFoundException;
 import com.ojt.klb.model.Account;
@@ -27,19 +28,13 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
-
+    private static final String TOPIC = "customer-topic";
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final AccountRepository accountRepository;
-
     private final GenerateUniqueNumber generateUniqueAccountNumber;
-
     private final KafkaTemplate<String, CustomerDto> kafkaTemplate;
-
-    private static final String TOPIC = "customer-topic";
 
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, AccountRepository accountRepository, GenerateUniqueNumber generateUniqueAccountNumber, KafkaTemplate<String, CustomerDto> kafkaTemplate) {
         this.userRepository = userRepository;
@@ -59,6 +54,8 @@ public class UserServiceImpl implements UserService {
             if (passwordEncoder.matches(password, user.getPassword())) {
                 logger.info("Login successful for username: {} ", username);
                 LoginDto loginDto = new LoginDto();
+                loginDto.setId(user.getId());
+                loginDto.setUsername(user.getUsername());
                 loginDto.setRole(String.valueOf(user.getRole()));
                 return Optional.of(loginDto);
             } else {
@@ -67,14 +64,13 @@ public class UserServiceImpl implements UserService {
         } else {
             logger.warn("Username not found: {} ", username);
         }
-
         return Optional.empty();
     }
 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createUser(RegisterDto registerDto) {
+    public RegisterResponseDto createUser(RegisterDto registerDto) {
         if (userRepository.existsByPhoneNumber(registerDto.getPhoneNumber())) {
             logger.warn("Phone number already in use: {} ", registerDto.getPhoneNumber());
             throw new PhoneNumberAlreadyExistsException("Phone number already exists: " + registerDto.getPhoneNumber());
@@ -84,9 +80,11 @@ public class UserServiceImpl implements UserService {
         newUser.setUsername(registerDto.getPhoneNumber());
         newUser.setPhoneNumber(registerDto.getPhoneNumber());
         newUser.setPassword(passwordEncoder.encode(registerDto.getPassword()));
+
         if (newUser.getRole() == null) {
             newUser.setRole(User.Role.customer);
         }
+
         newUser.setCreatedAt(Timestamp.from(Instant.now()));
         userRepository.save(newUser);
         logger.info("New user created with Id: {}", newUser.getId());
@@ -97,18 +95,26 @@ public class UserServiceImpl implements UserService {
 
         String accountNumber = generateUniqueAccountNumber.generate();
         newAccount.setAccountNumber(Long.parseLong(accountNumber));
-
         newAccount.setBalance(BigDecimal.ZERO);
         newAccount.setStatus(Account.Status.active);
         newAccount.setCreatedAt(Timestamp.from(Instant.now()));
         accountRepository.save(newAccount);
+
 
         CustomerDto customerDto = new CustomerDto();
         customerDto.setAccountId(newAccount.getId());
         customerDto.setPhoneNumber(newUser.getPhoneNumber());
         kafkaTemplate.send(TOPIC, customerDto);
         logger.info("Sent customer information to Kafka topic: {}", TOPIC);
+
+
+        RegisterResponseDto response = new RegisterResponseDto();
+        response.setUserId(newUser.getId());
+        response.setUsername(newUser.getUsername());
+        response.setRole(newUser.getRole().name());
+        return response;
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
