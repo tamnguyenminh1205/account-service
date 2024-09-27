@@ -44,7 +44,6 @@ public class SavingsAccountServiceImpl implements SavingsAccountService {
     @Override
     public void createSavingsAccount(Long userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
-
         if (optionalUser.isPresent()) {
             if (savingsAccountRepository.existsByUserId(userId)) {
                 logger.warn("Savings account already exists for userId: {}", userId);
