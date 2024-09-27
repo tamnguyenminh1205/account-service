@@ -114,12 +114,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Optional<GetAccountIdCustomerIdUserId> getAccountIdCustomerIdUserId(Long userId) {
+    public Optional<GetAllId> getAccountIdCustomerIdUserId(Long userId) {
         Optional<Account> account = accountRepository.findByUserId(userId);
         if (account.isPresent()) {
-            ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAccountIdAndCustomerId = accountClient.getAccountIdAndCustomerId(account.get().getId());
+            ResponseEntity<ApiResponse<GetAllId>> getAccountIdAndCustomerId = accountClient.getAllId(account.get().getId());
             if (getAccountIdAndCustomerId.getBody() != null && getAccountIdAndCustomerId.getBody().isSuccess()) {
-                GetAccountIdCustomerIdUserId data  = getAccountIdAndCustomerId.getBody().getData();
+                GetAllId data  = getAccountIdAndCustomerId.getBody().getData();
                 Optional<SavingsAccount> savingsAccount = savingsAccountRepository.findByUserId(userId);
                 data.setAccountId(account.get().getId());
                 data.setCustomerId(data.getCustomerId());

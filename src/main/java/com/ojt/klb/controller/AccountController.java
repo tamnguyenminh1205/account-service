@@ -3,7 +3,7 @@ package com.ojt.klb.controller;
 import com.ojt.klb.dto.AccountDto;
 import com.ojt.klb.dto.ChangeStatusDto;
 import com.ojt.klb.dto.FindNameByAccountDto;
-import com.ojt.klb.dto.GetAccountIdCustomerIdUserId;
+import com.ojt.klb.dto.GetAllId;
 import com.ojt.klb.response.ApiResponse;
 import com.ojt.klb.service.AccountService;
 import org.slf4j.Logger;
@@ -79,10 +79,10 @@ public class AccountController {
     }
 
     @GetMapping("/{userId}/all-id-for-gateway")
-    public ResponseEntity<ApiResponse<GetAccountIdCustomerIdUserId>> getAllIdForApiGateWay(@PathVariable Long userId) {
-        Optional<GetAccountIdCustomerIdUserId> data = accountService.getAccountIdCustomerIdUserId(userId);
+    public ResponseEntity<ApiResponse<GetAllId>> getAllIdForApiGateWay(@PathVariable Long userId) {
+        Optional<GetAllId> data = accountService.getAccountIdCustomerIdUserId(userId);
         if (data.isPresent()) {
-            ApiResponse<GetAccountIdCustomerIdUserId> response = new ApiResponse<>(
+            ApiResponse<GetAllId> response = new ApiResponse<>(
                     HttpStatus.OK.value(),
                     "All ID data fetched successfully",
                     true,
@@ -90,7 +90,7 @@ public class AccountController {
             );
             return ResponseEntity.ok(response);
         } else {
-            ApiResponse<GetAccountIdCustomerIdUserId> response = new ApiResponse<>(
+            ApiResponse<GetAllId> response = new ApiResponse<>(
                     HttpStatus.NOT_FOUND.value(),
                     "All id not found",
                     false,
